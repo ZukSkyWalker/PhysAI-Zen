@@ -1,13 +1,13 @@
-# core - 自动最新 arm64 + MPS 版（完美支持 Python 3.13）
+# core
 torch
 torchvision
 torchaudio
 
-# transformer 必备
+# transformer
 einops>=0.8.0
 jaxtyping>=0.2.0
 
-# 物理/可视化
+# Visualization and Physics
 numpy>=1.24
 scipy
 matplotlib
@@ -15,16 +15,15 @@ tqdm
 seaborn
 
 # RL
-gymnasium[classic-control,box2d]   # 完全无痛，LunarLander/CartPole 立刻可用
-# gymnasium[mujoco]                # 暂时注释，Python 3.13 + M4 装不了
+gymnasium[classic-control,box2d]
 stable-baselines3>=2.3.0
 wandb>=0.17.0
 
-# 量子/统计物理玩具
+# Quantum Toys
 qutip>=5.0
 opt-einsum>=3.3.0
 
-# 开发
+# Dev
 jupyterlab>=4.2
 ipykernel
 rich

@@ -1,7 +1,7 @@
 # Transformer and Reinforcement Learning In a Nutshell
 
-> 我至今觉得 deep learning 里面很多“高级概念”，本质都没跑出我大学热统课那几页的物理直觉。  
-> This note is for physicists who secretly suspect that transformers are just fancy partition-function machines.
+> 我至今觉得 deep learning 里面很多“高级概念”，本质都没跑出我大学热统课那一个学期的所学。  
+> This note is for physicists who secretly suspect that transformers are just partition-function machines.
 
 I’ll keep the **main body in English**, but I’ll sprinkle some **Chinese side comments** where the physics intuition really matters.
 
@@ -218,8 +218,7 @@ $$
 - softmax + cross-entropy 完全可以从最大熵原理里推出来； 
 - 把 reward 和 entropy 同时放进目标函数，就是在“路径空间”上做最大口径。  
 
-可以大胆下一个总结性句子：  
-**Modern deep learning ≈ a machine implementation of (constrained) maximum entropy / maximum caliber.**
+
 
 ---
 
