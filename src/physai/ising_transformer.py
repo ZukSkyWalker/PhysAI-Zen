@@ -1,28 +1,11 @@
-# Cell: Minimal Decoder-Only Transformer with Rotary Embeddings (2025 style)
+"""
+IsingTransformer: Minimal autoregressive Transformer for learning Ising model distributions.
+"""
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from einops import rearrange
 
-class RotaryEmbedding(nn.Module):
-    def __init__(self, dim: int):
-        super().__init__()
-        inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
-        self.register_buffer("inv_freq", inv_freq)
-
-    def forward(self, x):
-        seq_len = x.shape[1]
-        t = torch.arange(seq_len, device=x.device).type_as(self.inv_freq)
-        freqs = torch.einsum('i,j->ij', t, self.inv_freq)
-        emb = torch.cat((freqs, freqs), dim=-1)
-        return torch.cos(emb)[None, :, None, :], torch.sin(emb)[None, :, None, :]
-
-def apply_rotary_emb(q, k, cos, sin):
-    # q, k: (b, h, s, d)
-    q_rot = torch.cat((-q[..., 1::2], q[..., ::2]), dim=-1)
-    k_rot = torch.cat((-k[..., 1::2], k[..., ::2]), dim=-1)
-    return q * cos + q_rot * sin, k * cos + k_rot * sin
 
 class IsingTransformer(nn.Module):
     def __init__(self, d_model: int = 128, n_head: int = 8, n_layer: int = 6, block_size: int = 31):

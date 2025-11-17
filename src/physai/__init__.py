@@ -1,7 +1,7 @@
 # physai/__init__.py
 
 from .ising_data import generate_ising_samples, IsingDataset
-from .ising_transformer import IsingTransformer, RotaryEmbedding, apply_rotary_emb
+from .ising_transformer import IsingTransformer
 from .ising_diagnostics import (
     validate_ising_samples,
     print_validation_report,
@@ -17,8 +17,6 @@ __all__ = [
     "generate_ising_samples",
     "IsingDataset",
     "IsingTransformer",
-    "RotaryEmbedding",
-    "apply_rotary_emb",
     "validate_ising_samples",
     "print_validation_report",
     "compute_magnetization",

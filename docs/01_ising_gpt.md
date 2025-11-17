@@ -50,6 +50,10 @@ $$
 
 where $\xi(T) = -1/\log(\tanh(J/k_B T))$ is the **correlation length**. As $T \to 0$, $\xi \to \infty$ (quasi-long-range order).
 
+To illustrate the phase diagram, we generate samples across a grid of temperatures $T$ and fields $h$, verifying that observables like magnetization transition smoothly between ordered (low $T$, small $h$) and disordered (high $T$) regimes:
+
+![Validation grid over field and temperature](plots/data_valid_ht.png)
+
 ---
 
 ## Algorithm: Metropolis-Hastings Sampling
@@ -70,47 +74,17 @@ We generate equilibrium samples from $p_T(\{s_i\})$ using the **Metropolis algor
 3. After equilibration (500–1000 sweeps), save configuration
 4. Wait 10–20 sweeps between samples (decorrelation)
 
-**Implementation** (`src/ising.py`):
+**Implementation sketch** (`src/ising.py`), as a flowchart:
 
-```python
-def generate_ising_samples(
-    L: int = 32,
-    n_samples: int = 50_000,
-    temp: float = 1.0,
-    J: float = 1.0,
-    h: float = 0.0,
-    equilibration_steps: int = 500,
-    steps_between_samples: int = 10,
-    device: str | None = None,
-) -> torch.Tensor:
-    """
-    Generate equilibrium samples from 1D Ising model.
-    Returns: (n_samples, L) tensor with values in {-1, +1}
-    """
-    beta = 1.0 / temp
-    spins = torch.randint(0, 2, (L,), device=device) * 2 - 1
-    
-    samples = []
-    for _ in range(n_samples):
-        # Equilibration
-        for _ in range(equilibration_steps):
-            _metropolis_sweep(spins, beta, J, h, L)
-        
-        # Decorrelation + sampling
-        for _ in range(L * steps_between_samples):
-            _metropolis_sweep(spins, beta, J, h, L)
-        
-        samples.append(spins.clone())
-    
-    return torch.stack(samples)
-
-@torch.jit.script
-def _metropolis_sweep(spins: torch.Tensor, beta: float, J: float, h: float, L: int):
-    for _ in range(L):
-        i = torch.randint(0, L, (1,)).item()
-        dE = 2.0 * J * spins[i] * (spins[(i-1)%L] + spins[(i+1)%L]) + 2.0 * h * spins[i]
-        if dE <= 0 or torch.rand(1) < torch.exp(-beta * dE):
-            spins[i] = -spins[i]
+```mermaid
+flowchart TD
+    A[Start: random spins sᵢ taking values -1 or +1] --> B[Set β = 1 / T]
+    B --> C[For each sample 1..n_samples]
+    C --> D[Equilibrate: repeat equilibration_steps sweeps]
+    D --> E[Single sweep: pick random site i, compute ΔE, accept/reject flip]
+    E --> F[Decorrelate: perform L × steps_between_samples sweeps]
+    F --> G[Store current spin configuration]
+    G --> C
 ```
 
 ---
@@ -139,61 +113,34 @@ $$
 
 **Key insight**: The Transformer never sees $J$, $h$, or $T$. It only sees raw samples. Yet it learns to **implicitly encode the Boltzmann distribution** and the underlying energy landscape.
 
+The training process, using a standard autoregressive objective, shows a smooth convergence as the model internalizes the underlying physics:
+
+![Training loss vs. update](plots/trainingLog.png)
+
 ### Architecture: IsingGPT
 
-```python
-class IsingGPT(nn.Module):
-    def __init__(
-        self,
-        vocab_size: int = 2,        # {-1, +1} → {0, 1} after tokenization
-        seq_len: int = 32,           # L
-        d_model: int = 64,
-        n_heads: int = 4,
-        n_layers: int = 2,
-        dropout: float = 0.1,
-    ):
-        super().__init__()
-        self.token_embed = nn.Embedding(vocab_size, d_model)
-        self.pos_embed = nn.Embedding(seq_len, d_model)
-        
-        self.transformer = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(
-                d_model=d_model,
-                nhead=n_heads,
-                dim_feedforward=4*d_model,
-                dropout=dropout,
-                batch_first=True,
-            ),
-            num_layers=n_layers,
-        )
-        
-        self.head = nn.Linear(d_model, vocab_size)
-    
-    def forward(self, x):
-        # x: (batch, seq_len) in {0, 1}
-        pos = torch.arange(x.size(1), device=x.device).unsqueeze(0)
-        h = self.token_embed(x) + self.pos_embed(pos)
-        h = self.transformer(h)
-        logits = self.head(h)
-        return logits  # (batch, seq_len, vocab_size)
+```mermaid
+flowchart TD
+    A[Input spin configuration s₁ … s_L with values -1 or +1] --> B[Tokenize: map to 0 or 1]
+    B --> C[Token embedding layer]
+    C --> D[Positional embedding layer]
+    D --> E[Stack of Transformer encoder layers with multi-head self-attention and MLP]
+    E --> F[Linear readout head]
+    F --> G[Logits over 0 or 1 for each site]
 ```
 
-**Training loop**:
-```python
-optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
-criterion = nn.CrossEntropyLoss()
+**Training loop (conceptual)**:
 
-for epoch in range(num_epochs):
-    for batch in dataloader:
-        # batch: (B, L) in {-1, +1}
-        x = (batch + 1) // 2  # map to {0, 1}
-        
-        logits = model(x)  # (B, L, 2)
-        loss = criterion(logits.reshape(-1, 2), x.reshape(-1))
-        
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+```mermaid
+flowchart TD
+    A[Initialize IsingGPT parameters theta] --> B[Repeat over epochs]
+    B --> C[Sample a batch of equilibrium spin sequences]
+    C --> D[Tokenize spins: values -1 or +1 mapped to 0 or 1]
+    D --> E[Forward pass through Transformer to obtain logits]
+    E --> F[Compute cross-entropy loss vs. true tokens]
+    F --> G[Backpropagate gradients for theta loss]
+    G --> H[Update parameters theta with optimizer e.g. AdamW]
+    H --> B
 ```
 
 ### What the Model Learns
@@ -203,6 +150,10 @@ After training, we observe:
 1. **Accurate Boltzmann distribution**: Sampled configurations from $p_\theta$ match those from Metropolis
 2. **Attention = Correlation function**: The attention weights $\alpha_{ij}$ in layer 1 spontaneously approximate the two-point correlation $C(|i-j|)$
 3. **Phase-transition tracking**: Models trained at different $T$ exhibit systematically different attention patterns
+
+Evaluating the trained model across the $(h, T)$ grid reveals robust performance, with degradation near critical points where distributions are more complex:
+
+![Model report across (h, T)](plots/report_ht.png)
 
 **Visualization**: Plot attention matrix $A_{ij} = \alpha_{ij}$ vs. theoretical correlation $C(|i-j|)$. They align remarkably well.
 
@@ -244,26 +195,9 @@ This is exactly a **local Boltzmann distribution** over indices $j$, where:
 
 In the Ising model, the relevant information for predicting $s_i$ is $s_{i-1}$ (and to a lesser extent $s_{i-2}, s_{i-3}, \dots$). The attention mechanism automatically **up-weights nearby spins** because they carry higher mutual information.
 
----
+Empirically, the learned attention weights mirror the theoretical spin-spin correlations, providing direct evidence for this physics-ML connection:
 
-## Implementation Checklist
-
-### In `src/ising.py`:
-- [x] `generate_ising_samples()`: Metropolis sampler
-- [x] `_metropolis_sweep()`: single sweep (JIT-compiled)
-- [ ] `compute_correlation_function()`: exact $C(r)$ from samples
-- [ ] `theoretical_correlation()`: analytic formula for 1D Ising
-
-### In `src/transformer.py`:
-- [ ] `IsingGPT`: minimal 2-layer Transformer
-- [ ] `train_ising_gpt()`: training loop
-- [ ] `sample_from_model()`: autoregressive sampling
-- [ ] `extract_attention_weights()`: for visualization
-
-### In `src/viz.py`:
-- [ ] `plot_spin_configurations()`: visualize sample grids
-- [ ] `plot_attention_vs_correlation()`: overlay attention & $C(r)$
-- [ ] `plot_phase_diagram()`: trained models at different $T$
+![Spin correlation comparison](plots/spin_correlation.png)
 
 ---
 

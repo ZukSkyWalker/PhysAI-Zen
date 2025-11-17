@@ -5,6 +5,10 @@ Diagnostic tools for validating Ising model samples.
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+
+# Use DejaVu Sans font which supports mathematical angle brackets
+matplotlib.rcParams['font.family'] = 'DejaVu Sans'
 
 
 def compute_magnetization(samples: torch.Tensor) -> torch.Tensor:
