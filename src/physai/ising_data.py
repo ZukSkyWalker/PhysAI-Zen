@@ -1,7 +1,7 @@
 # Cell: Dataset Preparation – From Spins to Tokens
 
+import torch
 from torch.utils.data import Dataset, DataLoader
-import torch.nn.functional as F
 
 def generate_ising_samples(
     L: int = 32,
@@ -50,6 +50,31 @@ def generate_ising_samples(
 
 
 def _metropolis_sweep_vectorized(spins: torch.Tensor, beta: float, J: float, h: float):
+    """
+    Vectorized Metropolis sweep using checkerboard decomposition.
+    Updates even sites, then odd sites in parallel.
+    """
+    L = len(spins)
+    
+    for parity in [0, 1]:
+        sites = torch.arange(parity, L, 2, device=spins.device)
+        
+        if len(sites) == 0:
+            continue
+        
+        left = torch.roll(spins, shifts=1, dims=0)[sites]
+        right = torch.roll(spins, shifts=-1, dims=0)[sites]
+        
+        dE = 2.0 * spins[sites] * (J * (left + right) + h)
+        
+        accept_prob = torch.exp(-beta * dE)
+        accept_prob = torch.clamp(accept_prob, max=1.0)
+        
+        rand = torch.rand(len(sites), device=spins.device)
+        
+        flip_mask = rand < accept_prob
+        spins[sites[flip_mask]] *= -1
+
 
 class IsingDataset(Dataset):
     def __init__(self, spins: torch.Tensor):
