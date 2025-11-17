@@ -103,6 +103,6 @@ Each notebook is self-contained and runs in < 2 minutes:
 
 ---
 
-## License
+## Copyright Notice
 
-MIT
+This repository is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). You are free to share and adapt this work, but you must give appropriate credit, provide a link to the license, and indicate if changes were made. If you remix, transform, or build upon this material, you must distribute your contributions under the same license.
