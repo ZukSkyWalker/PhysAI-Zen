@@ -4,7 +4,7 @@
 
 ---
 
-## Physical Background
+## Physics Background
 
 ### Path Integrals in Quantum Mechanics
 
@@ -43,6 +43,32 @@ S_{\text{discrete}} = \sum_{t=0}^{T-1} \Big[\frac{(x_{t+1} - x_t)^2}{2\Delta t} 
 $$
 
 **Key idea**: The system "explores all possible paths" but exponentially favors paths with low action.
+
+### Mapping Physics to RL
+
+In the discrete action above, we can identify two components:
+
+1. **Kinetic term** (dynamics): $\frac{(x_{t+1} - x_t)^2}{2\Delta t}$ penalizes large jumps between consecutive states
+2. **Potential term** (cost): $V(x_t) \Delta t$ assigns a cost to visiting state $x_t$
+
+In **reinforcement learning**, the analogous structure is:
+
+$$
+S_{\text{RL}}[\tau] = \sum_{t=0}^{T-1} \Big[\underbrace{-\log p(s_{t+1} | s_t, a_t)}_{\text{dynamics constraint}} + \underbrace{(-r_t)}_{\text{negative reward}}\Big]
+$$
+
+**Correspondence**:
+- **Dynamics** $p(s_{t+1} | s_t, a_t)$ ↔ **Constrained paths**: The MDP transition probabilities act like a "kinetic term" that constrains which state transitions are likely. Deterministic dynamics ($s_{t+1} = f(s_t, a_t)$) correspond to zero kinetic energy—the path is fully constrained.
+  
+- **Reward** $r_t = R(s_t, a_t)$ ↔ **Negative potential**: Reward plays the role of negative potential energy $-V(x_t)$. High reward = low action, making the trajectory more probable.
+
+This gives the **trajectory distribution**:
+
+$$
+p(\tau) = p(s_0) \prod_{t=0}^{T-1} p(s_{t+1} | s_t, a_t) \cdot \pi(a_t | s_t) \cdot \exp\Big(\frac{1}{\alpha} r_t\Big)
+$$
+
+When we marginalize over the dynamics (which are fixed by the environment), we recover the MaxEnt RL objective where the policy $\pi(a|s)$ implicitly learns to sample high-reward trajectories.
 
 ---
 
@@ -159,99 +185,7 @@ $$
 
 where $\hat{R}_t = \sum_{t'=t}^{T} \gamma^{t'-t} r_{t'}$ is computed from the recorded trajectory.
 
-### Implementation Sketch
 
-```python
-class DecisionTransformer(nn.Module):
-    def __init__(
-        self,
-        state_dim: int,
-        action_dim: int,
-        hidden_dim: int = 128,
-        n_layers: int = 3,
-        n_heads: int = 4,
-        max_timestep: int = 1000,
-        dropout: float = 0.1,
-    ):
-        super().__init__()
-        
-        # Token embeddings
-        self.embed_return = nn.Linear(1, hidden_dim)
-        self.embed_state = nn.Linear(state_dim, hidden_dim)
-        self.embed_action = nn.Linear(action_dim, hidden_dim)
-        
-        # Positional embedding (per timestep, shared across R/s/a)
-        self.embed_timestep = nn.Embedding(max_timestep, hidden_dim)
-        
-        # Transformer
-        self.transformer = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(
-                d_model=hidden_dim,
-                nhead=n_heads,
-                dim_feedforward=4*hidden_dim,
-                dropout=dropout,
-                batch_first=True,
-            ),
-            num_layers=n_layers,
-        )
-        
-        # Output head: predict action
-        self.predict_action = nn.Linear(hidden_dim, action_dim)
-    
-    def forward(self, returns, states, actions, timesteps):
-        # returns: (B, T, 1)
-        # states: (B, T, state_dim)
-        # actions: (B, T, action_dim)
-        # timesteps: (B, T)
-        
-        B, T, _ = states.shape
-        
-        # Embed tokens
-        return_embed = self.embed_return(returns)       # (B, T, d)
-        state_embed = self.embed_state(states)          # (B, T, d)
-        action_embed = self.embed_action(actions)       # (B, T, d)
-        
-        # Add positional embeddings
-        time_embed = self.embed_timestep(timesteps)     # (B, T, d)
-        return_embed = return_embed + time_embed
-        state_embed = state_embed + time_embed
-        action_embed = action_embed + time_embed
-        
-        # Stack: [R_0, s_0, a_0, R_1, s_1, a_1, ...]
-        seq = torch.stack([return_embed, state_embed, action_embed], dim=2)  # (B, T, 3, d)
-        seq = seq.reshape(B, 3*T, -1)                    # (B, 3T, d)
-        
-        # Transformer with causal mask
-        h = self.transformer(seq)                        # (B, 3T, d)
-        
-        # Extract state embeddings (positions 1, 4, 7, ... = indices where action should be predicted)
-        h_states = h[:, 1::3, :]                         # (B, T, d)
-        action_preds = self.predict_action(h_states)     # (B, T, action_dim)
-        
-        return action_preds
-```
-
-**Training loop**:
-```python
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
-
-for batch in offline_dataset:
-    states, actions, rewards, dones = batch
-    
-    # Compute return-to-go
-    returns_to_go = compute_returns_to_go(rewards, gamma=0.99)  # (B, T, 1)
-    timesteps = torch.arange(T).unsqueeze(0).expand(B, T)       # (B, T)
-    
-    # Forward pass
-    action_preds = model(returns_to_go, states, actions, timesteps)
-    
-    # Loss: MSE for continuous actions, CE for discrete
-    loss = F.mse_loss(action_preds, actions)
-    
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-```
 
 ---
 
@@ -313,32 +247,16 @@ At inference, by setting a high $\hat{R}_0$, we **bias the sampling toward high-
 |-------------------------|---------------------------|
 | Path $x(t)$ | Trajectory $\tau = (s_t, a_t, r_t)$ |
 | Action $S[x(t)] = \int L(x, \dot{x}) dt$ | Negative return $S[\tau] = -\sum_t \gamma^t r_t$ |
+| Kinetic term $\frac{m}{2}\dot{x}^2$ | Dynamics constraint $-\log p(s_{t+1} \mid s_t, a_t)$ |
+| Potential $V(x)$ | Negative reward $-r_t$ |
 | Weight $\exp(-S[x]/\hbar)$ | Probability $\exp(\sum_t r_t / \alpha)$ |
 | Partition function $Z = \int \mathcal{D}x \, e^{-S[x]}$ | Trajectory partition function $Z = \sum_\tau e^{G(\tau)/\alpha}$ |
 | Boundary condition $x(0), x(T)$ | Desired return $\hat{R}_0$, initial state $s_0$ |
 | Propagator $K(x_T, x_0)$ | Trajectory distribution $p(\tau \mid s_0, \hat{R}_0)$ |
 
-The Decision Transformer is a **discrete, learned approximation** to the trajectory propagator.
+**Key insight**: The Decision Transformer is a **discrete, learned approximation** to the trajectory propagator. By conditioning on return-to-go $\hat{R}_t$, it learns which actions lead to high-reward paths, analogous to how a path integral weights paths by their action.
 
----
-
-## Implementation Checklist
-
-### In `src/rl.py`:
-- [ ] `DecisionTransformer`: core model class
-- [ ] `compute_returns_to_go()`: RTG calculation
-- [ ] `train_decision_transformer()`: training loop
-- [ ] `evaluate_dt()`: rollout in environment with target return
-
-### In `src/trajectory.py`:
-- [ ] `TrajectoryDataset`: offline dataset loader
-- [ ] `sample_trajectory()`: collect rollout from env
-- [ ] `preprocess_trajectories()`: normalize states/actions
-
-### In `src/viz.py`:
-- [ ] `plot_trajectory_returns()`: histogram of returns in dataset
-- [ ] `plot_attention_over_time()`: visualize which past states the model attends to
-- [ ] `compare_dt_vs_bc()`: Decision Transformer vs. Behavioral Cloning
+Note that in the RL setting, the dynamics $p(s_{t+1} | s_t, a_t)$ are given by the environment and constrain which trajectories are possible (like a "kinetic term" restricting path smoothness), while the policy chooses actions to maximize reward (minimize "potential energy" $-r_t$).
 
 ---
 

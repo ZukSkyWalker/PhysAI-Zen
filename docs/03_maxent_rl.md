@@ -4,7 +4,7 @@
 
 ---
 
-## Physical Background
+## Physics Background
 
 ### Langevin Dynamics
 
@@ -40,6 +40,16 @@ $$
 $$
 
 At equilibrium ($\partial p / \partial t = 0$), this yields the Boltzmann distribution.
+
+
+The figure below shows Langevin dynamics in a double-well potential at different temperatures. The empirical histograms (blue) match the theoretical Boltzmann distribution (red), confirming that temperature controls the exploration-exploitation tradeoff.
+
+![Langevin Dynamics: Temperature Controls Exploration](plots/langevin_dynamics_temperature_controls.png)
+
+**Key observations**:
+- Low $T$ (0.1): Particle is trapped in one well (exploitation)
+- High $T$ (2.0): Particle explores both wells (exploration)
+- Empirical distributions converge to theoretical Boltzmann predictions
 
 ---
 
@@ -187,6 +197,17 @@ where $Z(s) = \int \exp(Q^*(s,a)/\alpha) da$ is the partition function.
 - "Energy" $= -Q^*(s, a)$
 - "Temperature" $= \alpha$
 
+
+The figure below demonstrates how the temperature parameter $\alpha$ controls the policy distribution over actions with different Q-values:
+
+![Boltzmann Policy: Temperature Controls Exploration-Exploitation](plots/Boltzmann_Policy.png)
+
+**Key observations**:
+- $\alpha \to 0$: Policy becomes deterministic (selects highest Q-value action, shown in red)
+- $\alpha \to \infty$: Policy becomes uniform (maximum exploration)
+- Intermediate $\alpha$: Balances exploitation (high Q-values) with exploration (entropy)
+- Higher $\alpha$ leads to higher entropy $H(\pi)$ and more distributed probability mass
+
 ### SAC Algorithm
 
 SAC maintains:
@@ -228,69 +249,6 @@ $$
 L_\alpha = -\mathbb{E}_{a \sim \pi_\theta} \Big[\alpha \big(\log \pi_\theta(a|s) + \bar{H}\big)\Big]
 $$
 
-### Implementation Sketch
-
-```python
-class SAC:
-    def __init__(self, state_dim, action_dim, alpha=0.2, gamma=0.99, tau=0.005):
-        self.q1 = QNetwork(state_dim, action_dim)
-        self.q2 = QNetwork(state_dim, action_dim)
-        self.q1_target = copy.deepcopy(self.q1)
-        self.q2_target = copy.deepcopy(self.q2)
-        
-        self.policy = GaussianPolicy(state_dim, action_dim)
-        
-        self.alpha = alpha
-        self.gamma = gamma
-        self.tau = tau  # Polyak averaging coefficient
-        
-        self.q_optimizer = torch.optim.Adam(
-            list(self.q1.parameters()) + list(self.q2.parameters()), lr=3e-4
-        )
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=3e-4)
-    
-    def update(self, batch):
-        states, actions, rewards, next_states, dones = batch
-        
-        # --- Critic update ---
-        with torch.no_grad():
-            next_actions, next_log_probs = self.policy.sample(next_states)
-            q1_next = self.q1_target(next_states, next_actions)
-            q2_next = self.q2_target(next_states, next_actions)
-            q_next = torch.min(q1_next, q2_next)
-            
-            # Soft Bellman target
-            target = rewards + self.gamma * (1 - dones) * (q_next - self.alpha * next_log_probs)
-        
-        q1_pred = self.q1(states, actions)
-        q2_pred = self.q2(states, actions)
-        
-        q_loss = F.mse_loss(q1_pred, target) + F.mse_loss(q2_pred, target)
-        
-        self.q_optimizer.zero_grad()
-        q_loss.backward()
-        self.q_optimizer.step()
-        
-        # --- Actor update ---
-        new_actions, log_probs = self.policy.sample(states)
-        q1_new = self.q1(states, new_actions)
-        q2_new = self.q2(states, new_actions)
-        q_new = torch.min(q1_new, q2_new)
-        
-        policy_loss = (self.alpha * log_probs - q_new).mean()
-        
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward()
-        self.policy_optimizer.step()
-        
-        # --- Soft update of target networks ---
-        self._soft_update(self.q1, self.q1_target)
-        self._soft_update(self.q2, self.q2_target)
-    
-    def _soft_update(self, source, target):
-        for param, target_param in zip(source.parameters(), target.parameters()):
-            target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
-```
 
 ---
 
@@ -313,6 +271,37 @@ class SAC:
 3. **Off-policy**: Can reuse old data (unlike on-policy methods like PPO)
 4. **Automatic exploration**: No need to manually tune exploration noise
 
+### Training Results on Pendulum-v1
+
+The figure below shows SAC training on the continuous control task Pendulum-v1 (swing-up and balance):
+
+![SAC Training on Pendulum-v1](plots/RL_training_log.png)
+
+**Key observations**:
+- **Learning Curve** (left): Episode reward improves from ~-1500 (random) to ~-300, showing learning progress. The smoothed curve (dark blue) shows clear improvement despite high variance.
+- **Exploration** (middle): Policy entropy decreases over time as the agent becomes more confident, but remains non-zero (maintains stochasticity). This is a key advantage of MaxEnt RL.
+- **Training Losses** (right): Both Q-loss (green) and policy loss (purple) stabilize after initial growth, indicating convergence of the learning process.
+
+**Note**: Pendulum uses a cost-based reward (negative values), where 0 is optimal (upright and stationary). Well-trained SAC typically achieves -150 to -300 on this task.
+
+### Learned Policy and Value Function
+
+The figure below visualizes what the trained SAC agent has learned by examining the policy actions and Q-values across the state space:
+
+![Policy Actions and Q-Values in State Space](plots/policy_and_Q.png)
+
+**Key observations**:
+- **Policy Actions** (left): The learned policy $\pi(s)$ applies smooth, continuous torque control across different angles and angular velocities. The policy exhibits intelligent structure:
+  - Near upright position ($\theta \approx 0$): Applies corrective torque based on angular velocity to maintain balance
+  - Far from upright: Applies consistent torque to swing the pendulum toward the goal
+  - Color gradient (red to blue) shows the direction and magnitude of applied torque
+  
+- **Q-Values** (right): The soft Q-function $Q(s, \pi(s))$ shows highest values (yellow) near the upright position with low velocity, correctly identifying this as the most desirable state. The value landscape smoothly decreases as the pendulum moves away from the goal.
+
+- **Smooth Control Strategy**: Unlike discrete or bang-bang controllers, the MaxEnt policy learns a smooth, differentiable control law that generalizes well across the continuous state space.
+
+This visualization confirms that SAC successfully learned the underlying physics of the pendulum and developed a sophisticated control strategy that balances reaching the goal (high Q-values) with maintaining exploration (stochastic policy).
+
 ### Connection to Physics
 
 The **Boltzmann policy**
@@ -334,27 +323,6 @@ $$
 $$
 
 In other words: **SAC is not "inspired by" physics; it *is* physics applied to control**.
-
----
-
-## Implementation Checklist
-
-### In `src/rl.py`:
-- [ ] `SAC`: main class (critic, actor, target networks)
-- [ ] `GaussianPolicy`: squashed Gaussian policy for continuous actions
-- [ ] `QNetwork`: soft Q-function
-- [ ] `train_sac()`: training loop with replay buffer
-- [ ] `evaluate_policy()`: rollout for evaluation
-
-### In `src/langevin.py`:
-- [ ] `langevin_update()`: direct Langevin dynamics in policy space (pedagogical)
-- [ ] `compute_policy_gradient()`: ∇ (reward + entropy) for policy
-- [ ] `visualize_policy_landscape()`: plot policy as function of temperature
-
-### In `src/viz.py`:
-- [ ] `plot_sac_learning_curve()`: reward + entropy over training
-- [ ] `plot_boltzmann_policy()`: visualize $\pi(a|s)$ at different $\alpha$
-- [ ] `compare_sac_vs_ddpg()`: side-by-side comparison
 
 ---
 
