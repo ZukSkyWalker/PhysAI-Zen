@@ -64,7 +64,7 @@ I strongly recommend you use `uv` instead of conda.
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 2. Clone & enter repo
-git clone https://github.com/<your-username>/PhysAI-Zen.git
+git clone https://github.com/ZukSkyWalker/PhysAI-Zen.git
 cd PhysAI-Zen
 
 # 3. Create virtual environment
