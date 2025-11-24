@@ -14,17 +14,20 @@ We re-derive Transformers and Reinforcement Learning from first principles — u
 ```
 PhysAI-Zen/
 ├── docs/
-│   └── physics_primer.md          # Theory: Boltzmann → Attention → MaxEnt RL
+│   ├── 01_ising_gpt.md            # Theory: Transformer learns Boltzmann distribution
+│   ├── 02_decision_transformer.md # Theory: Offline RL as path integrals
+│   ├── 03_maxent_rl.md            # Theory: MaxEnt RL & Langevin dynamics
+│   ├── physics_primer.md          # Physics foundations
+│   └── plots/                     # Generated visualizations
 ├── notebooks/
-│   ├── 01_ising_gpt.ipynb         # Transformer learns 1D Ising phase transitions
-│   ├── 02_decision_transformer.ipynb
-│   └── 03_maxent_rl.ipynb
-├── src/
-│   ├── attention.py               # Attention mechanisms & kernel functions
-│   ├── ising.py                   # Ising model sampling (Metropolis-Hastings)
-│   ├── transformer.py             # Transformer building blocks
-│   ├── rl.py                      # RL algorithms (SAC, Decision Transformer)
-│   └── viz.py                     # Visualization utilities
+│   ├── 01_ising_model.ipynb       # Demo: Transformer learns 1D Ising model
+│   ├── 02_Decision_Transformer.ipynb  # Demo: Trajectory transformers
+│   └── 03_MaxEnt_RL.ipynb         # Demo: SAC implementation
+├── src/physai/
+│   ├── ising_data.py              # Ising model data generation
+│   ├── ising_transformer.py       # Transformer architecture
+│   ├── ising_diagnostics.py       # Validation & correlation functions
+│   └── training.py                # Training utilities
 └── requirements.txt
 ```
 
@@ -32,21 +35,21 @@ PhysAI-Zen/
 
 ## Design Philosophy
 
-**Notebooks = Demos**: Each notebook is a self-contained story with heavy commentary, visualizations, and "aha moments". Run in < 2 minutes on M4 Mac.
+**Notebooks = Demos**: Each notebook is a self-contained story with heavy commentary, visualizations, and "aha moments". Most demos run in < 5 minutes on modern hardware.
 
-**src/ = Reusable Functions**: All core algorithms live in Python modules. Notebooks import from `src/` and focus on pedagogy, not implementation.
+**src/physai/ = Reusable Package**: Core algorithms live in a clean Python package. Notebooks import from `physai` and focus on pedagogy, not implementation.
 
-**Theory First**: Read `docs/physics_primer.md` before diving into notebooks. It maps every ML concept to statistical physics rigorously.
+**Theory First**: Each chapter has both a theory document (in `docs/`) and an executable notebook. The theory provides rigorous derivations; the notebook provides hands-on experimentation.
 
 ---
 
 ## Chapter-by-Chapter Index
 
-| Chapter | Title | Notebook | Functions in `src/` | Status |
-|---------|-------|----------|---------------------|--------|
-| 01 | IsingGPT: Transformer Learns Phase Transitions | `notebooks/01_ising_gpt.ipynb` | `ising.py`: `generate_ising_samples()`, `transformer.py`: `IsingGPT` | In Progress |
-| 02 | Decision Transformer = Trajectory Path Integral | `notebooks/02_decision_transformer.ipynb` | `rl.py`: `DecisionTransformer`, `trajectory_sampler()` | Planned |
-| 03 | MaxEnt RL = Langevin + Maximum Caliber | `notebooks/03_maxent_rl.ipynb` | `rl.py`: `SAC`, `langevin_policy_update()` | Planned |
+| Chapter | Title | Notebook | Documentation | Status |
+|---------|-------|----------|---------------|--------|
+| 01 | IsingGPT: Transformer Learns Phase Transitions | `01_ising_model.ipynb` | `docs/01_ising_gpt.md` | ✅ Complete |
+| 02 | Decision Transformer = Trajectory Path Integral | `02_Decision_Transformer.ipynb` | `docs/02_decision_transformer.md` | 🚧 Theory complete, demo in progress |
+| 03 | MaxEnt RL = Langevin + Maximum Caliber | `03_MaxEnt_RL.ipynb` | `docs/03_maxent_rl.md` | ✅ Complete |
 
 ---
 
@@ -61,7 +64,7 @@ I strongly recommend you use `uv` instead of conda.
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 2. Clone & enter repo
-git clone https://github.com/yourname/PhysAI-Zen.git
+git clone https://github.com/<your-username>/PhysAI-Zen.git
 cd PhysAI-Zen
 
 # 3. Create virtual environment
@@ -87,10 +90,10 @@ Each notebook is self-contained and runs in < 2 minutes:
 
 | Demo | What you will see | Notebook |
 |------|-------------------|----------|
-| **IsingGPT** | A 2-layer Transformer learns the exact Boltzmann distribution of the 1D Ising model from raw samples → attention heads spontaneously discover nearest-neighbor correlations → phase-transition-like behavior emerges | `notebooks/01_ising_gpt.ipynb` |
+| **IsingGPT** | A 2-layer Transformer learns the exact Boltzmann distribution of the 1D Ising model from raw samples → attention heads spontaneously discover nearest-neighbor correlations → phase-transition-like behavior emerges | `01_ising_model.ipynb` |
 | **Attention = Correlation Function** | Visualization of attention matrices at different temperatures → identical to spin-spin correlation functions C(r) | same notebook |
-| **Decision Transformer** | Offline RL as discrete path integral over trajectories | `notebooks/02_decision_transformer.ipynb` (planned) |
-| **SAC as Langevin** | Soft Actor-Critic rewritten as physically correct Langevin sampling | `notebooks/03_maxent_rl.ipynb` (planned) |
+| **Decision Transformer** | Offline RL as discrete path integral over trajectories | `02_Decision_Transformer.ipynb` |
+| **MaxEnt RL & SAC** | Complete implementation of Soft Actor-Critic with Langevin dynamics, Boltzmann policies, and training on Pendulum-v1 | `03_MaxEnt_RL.ipynb` |
 
 ---
 

@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this repository in your research or teaching, please cite it as below."
+title: "PhysAI-Zen: Understanding Modern AI through Statistical Physics"
+abstract: "An educational repository that re-derives modern AI algorithms (Transformers, Reinforcement Learning) from first principles of statistical physics, using partition functions, Langevin dynamics, and maximum entropy principles."
+authors:
+  - family-names: "PhysAI-Zen"
+    given-names: "Contributors"
+type: software
+license: CC-BY-SA-4.0
+repository-code: "https://github.com/ZukSkyWalker/PhysAI-Zen"
+keywords:
+  - machine-learning
+  - statistical-physics
+  - transformers
+  - reinforcement-learning
+  - education
+  - boltzmann-distribution
+  - maximum-entropy
+  - langevin-dynamics
+version: 0.1.0
+date-released: 2025-01-01
+

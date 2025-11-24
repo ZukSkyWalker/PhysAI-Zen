@@ -1,29 +1,29 @@
 # core
-torch
-torchvision
-torchaudio
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
 
 # transformer
 einops>=0.8.0
 jaxtyping>=0.2.0
 
 # Visualization and Physics
-numpy>=1.24
-scipy
-matplotlib
-tqdm
-seaborn
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+tqdm>=4.65.0
+seaborn>=0.12.0
 
 # RL
 gymnasium[classic-control,box2d]
 stable-baselines3>=2.3.0
 wandb>=0.17.0
 
-# Quantum Toys
-qutip>=5.0
+# Quantum (optional, for future chapters)
+qutip>=5.0.0
 opt-einsum>=3.3.0
 
 # Dev
-jupyterlab>=4.2
-ipykernel
-rich
+jupyterlab>=4.2.0
+ipykernel>=6.25.0
+rich>=13.0.0

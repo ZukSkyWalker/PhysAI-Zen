@@ -6,6 +6,55 @@ build-backend = "hatchling.build"
 [project]
 name = "physai-zen"
 version = "0.1.0"
+description = "See Modern AI through the Lens of Statistical Physics"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "CC BY-SA 4.0"}
+authors = [
+    {name = "PhysAI-Zen Contributors"}
+]
+keywords = ["machine-learning", "physics", "transformers", "reinforcement-learning", "statistical-mechanics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "matplotlib>=3.7.0",
+    "einops>=0.8.0",
+    "tqdm>=4.65.0",
+]
+
+[project.optional-dependencies]
+rl = [
+    "gymnasium[classic-control,box2d]",
+    "stable-baselines3>=2.3.0",
+]
+quantum = [
+    "qutip>=5.0.0",
+    "opt-einsum>=3.3.0",
+]
+dev = [
+    "jupyterlab>=4.2.0",
+    "ipykernel>=6.25.0",
+    "rich>=13.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/ZukSkyWalker/PhysAI-Zen"
+Documentation = "https://github.com/ZukSkyWalker/PhysAI-Zen/tree/main/docs"
+Issues = "https://github.com/ZukSkyWalker/PhysAI-Zen/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/physai"]
