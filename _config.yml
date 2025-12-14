@@ -1,0 +1,57 @@
+title: ZukSkyWalker's Blog
+description: Seeking the truth of the universe
+baseurl: /PhysAI-Zen
+url: https://zukskywalker.github.io
+
+# Author
+author: Zukai Wang
+github_username: ZukSkyWalker
+
+# Build settings
+source: docs
+markdown: kramdown
+highlighter: rouge
+
+# Kramdown settings
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  math_engine: mathjax
+  
+# Collections
+collections:
+  posts:
+    output: true
+    permalink: /:year/:month/:day/:title/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - README.md
+  - LICENSE
+  - "*.ipynb"
+  - notebooks/
+  - src/
+  - requirements.txt
+  - pyproject.toml
+  - CITATION.cff
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
