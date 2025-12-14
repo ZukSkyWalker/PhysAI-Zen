@@ -32,6 +32,30 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
+  
+  <!-- Mermaid for flowcharts -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#4a9eff',
+        primaryTextColor: '#e8e6e3',
+        primaryBorderColor: '#4a9eff',
+        lineColor: '#00d4ff',
+        secondaryColor: '#1a1a1a',
+        tertiaryColor: '#2a2a2a',
+        background: '#0a0a0a',
+        mainBkg: '#1a1a1a',
+        secondBkg: '#2a2a2a',
+        textColor: '#e8e6e3',
+        border1: '#4a9eff',
+        border2: '#00d4ff',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif'
+      }
+    });
+  </script>
 </head>
 
 <body>
