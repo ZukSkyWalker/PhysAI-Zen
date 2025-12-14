@@ -6,7 +6,7 @@ _site/
 vendor/
 
 # Ruby
-Gemfile.lock
+# Gemfile.lock - keep it for consistent builds
 
 # macOS
 .DS_Store
