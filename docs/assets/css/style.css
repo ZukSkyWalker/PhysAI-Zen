@@ -30,6 +30,7 @@ body {
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
   background-attachment: fixed;
   position: relative;
+  overflow-x: hidden;
 }
 
 /* Starfield background effect */
@@ -62,6 +63,7 @@ body::before {
   max-width: 800px;
   margin: 0 auto;
   padding: 0 20px;
+  width: 100%;
 }
 
 /* Header */
@@ -190,6 +192,8 @@ body::before {
   border-radius: 12px 0 0 12px;
   opacity: 0;
   transition: opacity 0.3s ease;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
 }
 
 .post-preview:hover {
