@@ -51,9 +51,86 @@ $$
 
 **Key idea**: The system "explores all possible paths" but exponentially favors paths with low action.
 
-### 1.3 Mapping Physics to RL
+### 1.3 Concrete Example: Brownian Particle in Double-Well Potential
 
-In the discrete action above, we can identify two components:
+To make this concrete, consider a **1D Brownian particle in a double-well potential** — a classic problem in statistical physics that perfectly illustrates the path integral → RL connection.
+
+**System description:**
+
+- Particle position: $x_t \in \mathbb{R}$, discrete time $t = 0, 1, \dots, T$
+- Double-well potential: $V(x) = \frac{1}{4}x^4 - \frac{1}{2}x^2$ (minima at $x = \pm 1$, barrier at $x=0$)
+- Dynamics: Overdamped Langevin equation
+
+$$
+x_{t+1} = x_t - \gamma \frac{\partial V}{\partial x}(x_t) \Delta t + \sqrt{2\gamma k_B T \Delta t} \, \xi_t
+$$
+
+where $\xi_t \sim \mathcal{N}(0,1)$, $\gamma$ is friction, $T$ is temperature.
+
+**Path integral formulation (Euclidean time):**
+
+The propagator from $x_0$ to $x_T$ is:
+
+$$
+K(x_T | x_0) = \int \mathcal{D}x(t) \, \exp\left(-\frac{S_E[x(t)]}{k_B T}\right)
+$$
+
+where the **Euclidean action** (discrete version) is:
+
+$$
+S_E[x] = \sum_{t=0}^{T-1} \left[\frac{(x_{t+1} - x_t)^2}{2\Delta t} + V(x_t) \Delta t\right]
+$$
+
+- **Kinetic term** $\frac{(x_{t+1} - x_t)^2}{2\Delta t}$: penalizes large displacements (dynamics constraint)
+- **Potential term** $V(x_t) \Delta t$: penalizes high-energy positions
+
+**Recast as an RL problem:**
+
+- **State**: $s_t = x_t$ (position)
+- **Action**: $a_t = x_{t+1} - x_t$ (displacement, continuous)
+- **Reward**: $r_t = -V(x_t) \Delta t - \frac{(x_{t+1} - x_t)^2}{2\Delta t}$ (negative action!)
+- **Dynamics**: Deterministic $s_{t+1} = s_t + a_t$ (or add noise)
+- **Goal**: Maximize cumulative reward $G(\tau) = \sum_t r_t = -S_E[\tau]$
+
+**Key insight**: High-reward trajectories = low-action paths!
+
+**What Decision Transformer learns:**
+
+Given an offline dataset of trajectories sampled from Langevin dynamics at various temperatures:
+
+1. **Training**: Learn $p(a_t | x_{0:t}, \hat{R}_t)$ where $\hat{R}_t$ is return-to-go (≈ "remaining negative action")
+2. **Test time**: Set high target $\hat{R}_0$ (tells model: "I want a low-action trajectory")
+3. **Result**: DT samples smooth, low-energy paths:
+   - From left well ($x \approx -1$)
+   - Slowly climb over barrier (minimize kinetic penalty)
+   - Slide down to right well ($x \approx +1$, low potential)
+
+**Behavior at different target returns** ($L=100$ steps, $\Delta t=0.01$, $\gamma=1$, $T=0.1$):
+
+| Target $\hat{R}_0$ (≈ $-S_E$) | DT-generated trajectory | Physical interpretation |
+|-------------------------------|------------------------|------------------------|
+| High (e.g., -20) | Smooth barrier crossing, classical escape path | Low-temperature limit, optimal path dominates |
+| Medium (e.g., -50) | Occasional crossing, some fluctuations | Medium temperature, thermally activated escape |
+| Low (e.g., -100) | Trapped in one well, random walk | High temperature, paths nearly unbiased |
+
+**Visual picture:**
+- **High $\hat{R}_0$ (low action)**: DT generates instanton-like trajectories — particle slowly climbs barrier (overcoming kinetic penalty), then quickly slides to the other well (low potential).
+- **Low $\hat{R}_0$ (high action)**: DT generates noisy Brownian motion, wandering randomly, often failing to cross the barrier.
+
+**Why this example is perfect for Decision Transformer:**
+
+1. **Explicit path integral**: Physics uses $\exp(-S_E / k_B T)$ to weight paths
+2. **DT uses identical weighting**: $\exp(G(\tau)/\alpha) = \exp(-S_E[\tau]/\alpha)$ where $\alpha$ corresponds to temperature
+3. **Conditioning on $\hat{R}_t$**: Like boundary conditions in path integrals (specify initial/final points or total action budget)
+4. **Attention captures long-range dependencies**: "A small displacement 20 steps ago determines whether we can cross the barrier now" — exactly the global weighting in path integrals
+
+This is a **quantitative, visualizable** example where Decision Transformer literally learns to solve a path integral problem!
+
+---
+
+### 1.4 General Mapping: Physics to RL
+
+Returning to the general discrete action formulation, we can identify two components:
 
 1. **Kinetic term** (dynamics): $\frac{(x_{t+1} - x_t)^2}{2\Delta t}$ penalizes large jumps between consecutive states
 2. **Potential term** (cost): $V(x_t) \Delta t$ assigns a cost to visiting state $x_t$
@@ -277,7 +354,9 @@ Note that in the RL setting, the dynamics $p(s_{t+1} | s_t, a_t)$ are given by t
 
 4. **Attention = Long-Range Dependencies**: Unlike Markovian methods (Q-learning), the Transformer can discover and exploit correlations across long time horizons.
 
-5. **Physics → ML**: The path integral formulation, developed for quantum mechanics, provides a unifying language for understanding both equilibrium statistical mechanics (Chapter 01: Ising) and sequential decision-making (this chapter).
+5. **Physics → ML**: The path integral formulation, developed for quantum mechanics, provides a unifying language for understanding both equilibrium statistical mechanics (IsingGPT post) and sequential decision-making (this post).
+
+6. **Concrete Example**: The double-well Brownian particle problem shows Decision Transformer literally solving a path integral: conditioning on high $\hat{R}_0$ biases sampling toward low-action (high-reward) escape paths, exactly as $\exp(-S_E/k_B T)$ weights paths in statistical mechanics.
 
 ---
 
