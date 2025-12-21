@@ -5,14 +5,17 @@ layout: default
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">{{ page.title | escape }}</h1>
-    <p class="post-meta">
-      <time datetime="{{ page.date | date_to_xmlschema }}">
-        {{ page.date | date: "%B %d, %Y" }}
-      </time>
-      {% if page.author %}
-        • <span>{{ page.author }}</span>
-      {% endif %}
-    </p>
+    <div class="post-meta">
+      <img src="{{ '/assets/cyber_zuk.jpg' | relative_url }}" alt="{{ site.author }}" class="post-author-avatar">
+      <div>
+        <time datetime="{{ page.date | date_to_xmlschema }}">
+          {{ page.date | date: "%B %d, %Y" }}
+        </time>
+        {% if page.author %}
+          • <span style="color: var(--accent-color); font-weight: 600;">{{ page.author }}</span>
+        {% endif %}
+      </div>
+    </div>
     {% if page.tags %}
       <div class="post-tags">
         {% for tag in page.tags %}

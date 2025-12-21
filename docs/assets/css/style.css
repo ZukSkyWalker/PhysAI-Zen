@@ -130,44 +130,155 @@ body::before {
   width: 100%;
 }
 
-/* Home Page */
-.home .intro {
-  margin-bottom: 50px;
-  padding: 40px;
+/* Hero Section with Avatar */
+.hero-section {
+  margin-bottom: 60px;
+  padding: 50px 40px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 40px;
 }
 
-.home .intro::before {
+.hero-section::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 3px;
+  height: 4px;
   background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
 }
 
-.home .intro h1 {
-  font-size: 42px;
+.hero-section::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(74, 158, 255, 0.1), transparent);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.avatar-container {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid var(--primary-color);
+  box-shadow: 0 0 30px var(--glow-color), 0 0 60px rgba(74, 158, 255, 0.3);
+  object-fit: cover;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px var(--secondary-color), 0 0 80px rgba(0, 212, 255, 0.4);
+  border-color: var(--secondary-color);
+}
+
+.avatar-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, var(--primary-color), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.3;
+  animation: pulse-glow 3s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% { 
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.hero-content {
+  flex: 1;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 48px;
   font-weight: 700;
   margin-bottom: 15px;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px var(--glow-color);
+  line-height: 1.2;
 }
 
-.home .intro .description {
-  font-size: 18px;
+.hero-description {
+  font-size: 20px;
   color: var(--light-text);
   line-height: 1.6;
   font-style: italic;
+  margin-bottom: 20px;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--light-text);
+}
+
+.hero-author {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.hero-separator {
+  color: var(--border-color);
+}
+
+.hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-color);
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.hero-link:hover {
+  background: var(--primary-color);
+  color: var(--background);
+  box-shadow: 0 0 15px var(--glow-color);
+  transform: translateY(-2px);
+}
+
+.hero-link svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Post Preview */
@@ -633,6 +744,21 @@ a {
   transition: all 0.3s ease;
 }
 
+/* Author Info in Post */
+.post-header .post-meta {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.post-author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 0 10px var(--glow-color);
+}
+
 /* Responsive */
 @media screen and (max-width: 768px) {
   body::before {
@@ -650,12 +776,34 @@ a {
     margin-right: 20px;
   }
 
-  .home .intro {
-    padding: 25px;
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 30px 20px;
+    gap: 25px;
   }
 
-  .home .intro h1 {
-    font-size: 32px;
+  .avatar {
+    width: 120px;
+    height: 120px;
+  }
+
+  .avatar-glow {
+    width: 130px;
+    height: 130px;
+  }
+
+  .hero-title {
+    font-size: 36px;
+  }
+
+  .hero-description {
+    font-size: 16px;
+  }
+
+  .hero-meta {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .post {
