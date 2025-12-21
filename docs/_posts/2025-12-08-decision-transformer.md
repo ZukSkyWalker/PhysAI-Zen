@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Chapter 02: Decision Transformer – Offline RL as Discrete Path Integral"
+title: "Decision Transformer – Offline RL as Discrete Path Integral"
 date: 2025-12-08
 author: ZukSkyWalker
 tags: [Decision Transformer, Reinforcement Learning, Path Integral, Offline RL]
@@ -11,9 +11,9 @@ excerpt: "Offline reinforcement learning recast as sequence modeling: trajectori
 
 ---
 
-## Physics Background
+## 1. Physics Background
 
-### Path Integrals in Quantum Mechanics
+### 1.1 Path Integrals in Quantum Mechanics
 
 In Feynman's formulation, the transition amplitude from state $x_0$ at $t=0$ to $x_T$ at time $T$ is:
 
@@ -35,7 +35,7 @@ $$
 
 with $S_E = \int d\tau \, [\frac{m}{2}\dot{x}^2 + V(x)]$. Now it looks like **statistical mechanics**: paths with lower action have exponentially higher weight.
 
-### Discrete Path Integrals
+### 1.2 Discrete Path Integrals
 
 For a system evolving in discrete time steps $t = 0, 1, \dots, T$:
 
@@ -51,7 +51,7 @@ $$
 
 **Key idea**: The system "explores all possible paths" but exponentially favors paths with low action.
 
-### Mapping Physics to RL
+### 1.3 Mapping Physics to RL
 
 In the discrete action above, we can identify two components:
 
@@ -79,9 +79,9 @@ When we marginalize over the dynamics (which are fixed by the environment), we r
 
 ---
 
-## RL as Path Integral Over Trajectories
+## 2. RL as Path Integral Over Trajectories
 
-### Reinforcement Learning Setup
+### 2.1 Reinforcement Learning Setup
 
 An agent interacts with an environment over discrete time steps:
 - **State**: $s_t \in \mathcal{S}$
@@ -103,7 +103,7 @@ $$
 
 where $\gamma \in [0,1]$ is the discount factor.
 
-### Maximum Entropy RL (brief recap from Chapter 03)
+### 2.2 Maximum Entropy RL (brief recap)
 
 In MaxEnt RL, we seek a policy $\pi(a|s)$ that maximizes:
 
@@ -119,7 +119,7 @@ $$
 
 This is a **Boltzmann policy** with "temperature" $\alpha$.
 
-### Trajectory Distribution as Path Integral
+### 2.3 Trajectory Distribution as Path Integral
 
 We can define a **distribution over trajectories** weighted by return:
 
@@ -145,7 +145,7 @@ where $Z = \sum_{\tau} \exp(-S[\tau]/\alpha)$ is the trajectory partition functi
 
 ---
 
-## Algorithm: Decision Transformer
+## 3. Algorithm: Decision Transformer
 
 **Key insight** (Chen et al., NeurIPS 2021):  
 Instead of learning a value function $Q(s,a)$ or policy $\pi(a|s)$, directly model the **conditional distribution**:
@@ -166,7 +166,7 @@ At test time:
 
 **Why this works**: The model learns that "if I'm in state $s$ and want to achieve return $\hat{R}$, I should take action $a$ that historically led to $\hat{R}$ from $s$."
 
-### Architecture
+### 3.1 Architecture
 
 Treat the trajectory as a sequence of **interleaved tokens**:
 
@@ -196,9 +196,9 @@ where $\hat{R}_t = \sum_{t'=t}^{T} \gamma^{t'-t} r_{t'}$ is computed from the re
 
 ---
 
-## ML Narrative: Trajectory Modeling vs. Dynamic Programming
+## 4. ML Narrative: Trajectory Modeling vs. Dynamic Programming
 
-### Traditional RL: Value Functions
+### 4.1 Traditional RL: Value Functions
 
 Most RL algorithms (Q-learning, Actor-Critic, PPO) learn:
 - **Value function**: $V^\pi(s) = \mathbb{E}_\pi[\sum_{t} \gamma^t r_t \mid s_0 = s]$
@@ -212,7 +212,7 @@ $$
 
 This is a **local, recursive** update: the value at $s$ depends only on the immediate reward and the value of the next state.
 
-### Decision Transformer: Sequence Modeling
+### 4.2 Decision Transformer: Sequence Modeling
 
 Instead, Decision Transformer:
 1. Treats the **entire trajectory** as a sequence
@@ -232,9 +232,9 @@ Instead, Decision Transformer:
 
 ---
 
-## Connection to Path Integrals
+## 5. Connection to Path Integrals
 
-### Why "Path Integral"?
+### 5.1 Why "Path Integral"?
 
 In the trajectory distribution
 
@@ -248,7 +248,7 @@ the sum $\sum_t \gamma^t r_t$ plays the role of a **discrete action**. The Decis
 
 At inference, by setting a high $\hat{R}_0$, we **bias the sampling toward high-reward paths**, just as in a path integral, we can bias toward paths with low action by adjusting boundary conditions or sources.
 
-### Analogy Table
+### 5.2 Analogy Table
 
 | Path Integral (Physics) | Decision Transformer (RL) |
 |-------------------------|---------------------------|
@@ -267,7 +267,7 @@ Note that in the RL setting, the dynamics $p(s_{t+1} | s_t, a_t)$ are given by t
 
 ---
 
-## Key Takeaways
+## 6. Key Takeaways
 
 1. **RL = Sequence Modeling**: By treating trajectories as sequences and conditioning on return-to-go, we bypass the need for value functions and Bellman equations.
 
@@ -281,7 +281,7 @@ Note that in the RL setting, the dynamics $p(s_{t+1} | s_t, a_t)$ are given by t
 
 ---
 
-## Further Reading
+## 7. Further Reading
 
 - **Original paper**: Chen et al., *Decision Transformer: Reinforcement Learning via Sequence Modeling* (NeurIPS 2021)
 - **Path integrals in RL**: Kappen, *Path integrals and symmetry breaking for optimal control theory* (2005)
